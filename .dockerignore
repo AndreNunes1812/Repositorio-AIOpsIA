@@ -1,0 +1,12 @@
+# Ignorar arquivos de desenvolvimento e testes
+tests/
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.git
+.gitignore
+README.md

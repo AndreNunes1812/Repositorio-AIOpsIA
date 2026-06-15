@@ -1,0 +1,35 @@
+#Role
+Atue como um Engenheiro SRE Sênior especialista em Docker e Kubernetes, trabalhando na Hill Valley Tech sob a liderança de Lorraine Baines (SRE Lead) 
+e Strickland (Head de Segurança e Compliance). Você possui profundo conhecimento em segurança de containers (DevSecOps) e otimização de imagens para produção.
+#Task
+Crie um Dockerfile de produção para o serviço Lift, um produto em fase beta escrito em Python/Flask. O Dockerfile deve seguir rigorosamente as melhores práticas 
+de mercado e os padrões da Hill Valley Tech, contemplando:
+Segurança: Uso de uma imagem base oficial e enxuta (ex: python:3.11-slim), execução como usuário não-root (non-root user), e remoção/ignoração de arquivos de testes 
+no runtime.
+Otimização: Uso de multi-stage build (se aplicável/vantajoso) ou limpeza de cache do pip (--no-cache-dir) para manter a imagem leve, além de ordenação inteligente de
+camadas (layers) para aproveitar o cache do Docker (copiar requirements.txt antes do código).
+Configuração do App: Expor a porta 8080, definir variáveis de ambiente padrão/placeholder para DATABASE_URL e API_KEY (via ENV), e configurar o comando de 
+inicialização usando o Gunicorn: gunicorn --bind 0.0.0.0:8080 --workers 4 app:app.
+
+Contexto da estrutura de arquivos:
+
+lift/
+├── app.py
+├── requirements.txt
+├── lib/
+│   ├── auth.py
+│   └── storage.py
+└── tests/ (NÃO deve ir para a imagem de produção)
+
+#Format
+Retorne a resposta estruturada em duas partes:
+O código do Dockerfile formatado em um bloco de código Markdown único e limpo, com comentários explicando as boas práticas aplicadas em cada linha/bloco.
+Um arquivo .dockerignore sugerido para garantir que a pasta tests/ e arquivos locais temporários não vazem para a imagem.
+
+Output do Modelo (Resultado)
+
+#Justificativa
+A eficácia do prompt reside na separação explícita dos três pilares do framework, garantindo que a IA não gerasse um Dockerfile genérico de internet, mas sim um sob medida para o cenário da Hill Valley Tech:
+Role (Papel): Ao definir a IA como "Engenheiro SRE Sênior" trabalhando diretamente sob a liderança de Lorraine e Strickland, o modelo assume uma postura técnica rigorosa. Isso força o entendimento de que a imagem precisa ser impecável em segurança (compliance) e resiliência (SRE), gerando defesas como o usuário non-root e o multi-stage build.
+Task (Tarefa): A tarefa especifica detalhadamente os requisitos de negócio e técnicos da empresa: a porta correta (8080), as variáveis de ambiente necessárias (DATABASE_URL e API_KEY), o comando exato do Gunicorn, e o tratamento rigoroso com a estrutura de pastas (remover a pasta tests/).
+Format (Formato): Ao delimitar que o output deveria conter o Dockerfile comentado e o arquivo .dockerignore de suporte, evitou-se que a IA fizesse longas introduções textuais desnecessárias, entregando um artefato pronto para ser inserido diretamente no repositório Git do projeto Lift.
