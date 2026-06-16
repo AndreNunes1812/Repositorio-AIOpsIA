@@ -1,0 +1,52 @@
+#context
+Você é o Engenheiro de Confiabilidade de Sites (SRE) Sênior da Hill Valley Tech, trabalhando sob forte pressão ao lado de Lorraine Baines (Líder de SRE) e Doc Brown (CTO). Um incidente grave está em andamento no ambiente de produção durante o pico de tráfego. 
+O Doc Brown entrou na call de crise e precisa de um postmortem técnico preliminar em 20 minutos para decidir entre duas ações excludentes:
+Opção A: Rollback imediato do deploy v2.48.0 (que subiu ontem às 18:42 UTC).
+Opção B: Scaling emergencial (aumento de limites/instância do RDS PostgreSQL e do pool de conexões).
+
+O ecossistema é composto por:
+- Chronos: API gateway e plataforma core.
+- Ledger: Data warehouse PostgreSQL (onde o problema reflete).
+- Reactor: Processamento assíncrono por filas.
+- Beacon: Plataforma de observabilidade.
+
+Aqui estão os dados coletados nos últimos minutos:
+
+1. Artefato de Deploy (v2.48.0 ontem às 18:42 UTC):
+- Novo endpoint: POST /v2/transactions/batch
+- Refatoração: Cliente do Ledger teve o pool de conexões movido para uma nova biblioteca interna.
+- Bump: psycopg 3.1.18 -> 3.2.0
+- Timeout do Ledger: reduzido de 5s para 2s.
+
+2. Métricas do Beacon (últimos 30 min):
+- 13:30 UTC: p99 420ms | 1200 req/s | 0.2% err
+- 14:00 UTC: p99 780ms | 1780 req/s | 0.8% err
+- 14:10 UTC: p99 2400ms | 2100 req/s | 4.5% err
+- 14:20 UTC: p99 8100ms | 2650 req/s | 11.7% err
+
+3. Logs do Pod (chronos-api):
+2026-04-24 14:19:48 [ERROR] [ledger-client] connection pool exhausted (max=20, active=20, waiting=147)
+2026-04-24 14:19:49 [WARN]  [ledger-client] query timeout after 2000ms: SELECT ... FROM transactions WHERE ...
+2026-04-24 14:19:49 [ERROR] [handler] POST /v2/transactions/batch failed: context deadline exceeded
+2026-04-24 14:19:50 [ERROR] [ledger-client] connection reset by peer
+2026-04-24 14:19:51 [WARN]  [circuit-breaker] ledger-client OPEN (threshold 50%, current 87%)
+2026-04-24 14:19:52 [ERROR] [reactor] failed to publish message: chronos-api upstream error
+
+4. Estado Atual da Infraestrutura:
+- Fila 'chronos-transactions' (Reactor): 50.127 mensagens represadas, crescendo ~800/min. Consumer lag em 18 minutos.
+- Chronos: 12/12 pods (HPA no talo). CPU 62%, Memória 71%.
+- Conexões Ledger: 240/250 (limite total do RDS PostgreSQL atingido).
+
+#action
+Analise a causa raiz correlacionando as alterações do deploy (v2.48.0) com os sintomas observados (exaustão do pool local, timeout de 2s, estouro do limite do RDS, circuit breaker aberto e represamento no Reactor). 
+Gere um relatório de postmortem conciso direcionado ao CTO, respondendo categoricamente: qual a Causa Raiz mais provável e qual a Recomendação Imediata (Rollback ou Scaling)?
+
+#result
+O output deve seguir rigorosamente a estrutura abaixo:
+1. DECISÃO IMEDIATA: [Indique claramente: ROLLBACK ou SCALING]
+2. SUMÁRIO EXECUTIVO DA CAUSA RAIZ: [Explique em até 3 parágrafos a mecânica da falha, cruzando os logs e o novo endpoint de batch com a exaustão de conexões].
+3. ANÁLISE DOS IMPACTOS: [Mapeamento do estado atual da API, Banco e Filas].
+4. PLANO DE AÇÃO PÓS-MITIGAÇÃO: [Próximos passos após a decisão ser executada].
+
+#evaluation
+O sucesso deste relatório será avaliado pela sua capacidade de provar tecnicamente se o gargalo é puramente volumétrico de tráfego (o que justificaria Scaling) ou se há uma falha de design/arquitetura introduzida no deploy v2.48.0 (o que exige Rollback). Mantenha o tom altamente profissional, urgente e direto ao ponto.

@@ -1,0 +1,2 @@
+Para esta situação de alta pressão em produção, o framework C-A-R-E (Context, Action, Result, Example/Evaluation) é o mais adequado.
+Por que o C-A-R-E? Em incidentes de infraestrutura, a IA precisa entender perfeitamente o Contexto operacional atual, a Ação esperada imediata (analisar e recomendar), o Resultado pretendido (um postmortem focado na tomada de decisão rápida pelo CTO) e a Métrica de Avaliação (o critério técnico de saturação do banco vs. bug de código).

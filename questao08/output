@@ -1,0 +1,14 @@
+. DECISÃO IMEDIATA: ROLLBACK DA VERSÃO v2.48.0
+O scaling emergencial não resolverá o problema e poderá agravar a saturação do banco. Devemos executar o rollback imediato para a versão v2.47.0.
+2. SUMÁRIO EXECUTIVO DA CAUSA RAIZ
+A causa raiz do incidente não é o aumento volumétrico de requisições, mas sim um bug estrutural de vazamento ou má configuração de conexões introduzido no deploy da v2.48.0. A refatoração que moveu o pool de conexões para a nova biblioteca interna, combinada com a introdução do endpoint POST /v2/transactions/batch, gerou um cenário de contenção severa.
+O novo endpoint de batch (lote) naturalmente consome mais conexões ou retém conexões abertas por mais tempo executando transações longas. Os logs revelam que o pool local de cada pod está esgotado (max=20, active=20), enquanto o banco de dados Ledger atingiu o teto crítico de conexões do cluster (240/250). Como temos exatamente 12 pods ativos no Chronos e cada um está configurado com max=20, a conta fecha perfeitamente: 12×20=240 conexões.
+O decréscimo do timeout de 5s para 2s, em vez de proteger o sistema, causou cascatas de timeouts (context deadline exceeded). Como as requisições em lote demoram mais que 2 segundos para processar no banco, a API corta a query antes do fim, abrindo o Circuit Breaker (ledger-client OPEN). O aumento do p99_latency_ms para 8100ms não reflete a lentidão do banco em si, mas sim o tempo de fila das requisições esperando uma conexão livre no pool local (waiting=147). Fazer o scaling do RDS apenas permitiria que mais conexões travassem, sem curar o comportamento ineficiente da nova biblioteca.
+3. ANÁLISE DOS IMPACTOS
+Chronos (API Gateway): Latência inaceitável (8.1 s no p99) e taxa de erro escalando rapidamente para 11.7%, gerando indisponibilidade parcial na ponta.
+Ledger (Banco de Dados): Totalmente saturado na camada de conexões (240/250), rejeitando novas conexões devido ao teto do RDS.
+Reactor (Mensageria): Efeito cascata crítico. Como a API falha ao processar e responder, o fluxo assíncrono travou, gerando um acúmulo de mais de 50 mil mensagens na fila chronos-transactions, acumulando a uma taxa perigosa de +800/min com lag de 18 minutos.
+4. PLANO DE AÇÃO PÓS-MITIGAÇÃO
+Imediato (T+5m): Executar rollback via Argo CD para a v2.47.0 e forçar a reinicialização dos pods para liberar instantaneamente as 240 conexões presas no Ledger.
+Curto Prazo (T+30m): Ligar os consumidores do Reactor para drenar as 50 mil mensagens represadas, monitorando se o Ledger aguentará o reprocessamento.
+Investigação (Próximos Dias): Auditar a nova biblioteca interna de conexões em ambiente de staging para garantir o fechamento correto de sessões (connection closure) e revisar o limite do endpoint de batch.
