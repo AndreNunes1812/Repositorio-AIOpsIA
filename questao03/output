@@ -1,0 +1,33 @@
+Relatório Executivo de Otimização de Custos AWS — Hill Valley Tech
+Para: Goldie Wilson (CEO)
+De: Time de Arquitetura de Nuvem / FinOps
+Status da Meta: Viável e Recomendada
+
+1. Panorama Financeiro Atual
+Custo Mensal Total Atual: $41.800,00 USD
+Meta de Redução (15%): $6.270,00 USD
+Custo Alvo Projetado: $35.530,00 USD
+
+2. Tabela de Oportunidades Priorizadas
+#	Oportunidade / Ação Recomendada	Serviço AWS	Economia Estimada (USD)	% da Conta Total	Esforço	Riscos, Impactos no SLA e Pré-requisitos
+1	Savings Plans / Instâncias Reservadas para workloads variáveis.	EC2 on-demand	$2.460,00 (Assumindo 30% de desconto)	5,88%	Baixo	Risco Zero no SLA. Requer aprovação financeira de Goldie para compromisso de 1 ou 3 anos.
+2	Políticas de Ciclo de Vida do CloudWatch Logs. Reduzir retenção de 90 para 30 dias e exportar para S3 Glacier se necessário.	CloudWatch Logs	$1.400,00 (Redução de ~50%)	3,35%	Baixo	Atenção ao Compliance: Strickland (Segurança) precisa validar se auditorias exigem logs quentes por mais tempo.
+3	Direcionamento de Tráfego via VPC Endpoints (S3/Dynamo) para eliminar custos de NAT Gateway e Data Transfer.	NAT Gateway / Data Transfer	$1.240,00 (Redução de ~40%)	2,97%	Médio	Alteração de tabelas de rotas de rede. Requer validação de Lorraine (SRE) para garantir que caminhos de rede alternativos não quebrem o Chronos.
+4	Downsizing / Rightsizing de Clusters EKS e Redis. Uso médio está baixo (58% e 40%).	EKS / ElastiCache	$1.320,00 (Redução de ~15% combinada)	3,16%	Médio	Risco Médio de SLA: George McFly precisa validar se o Redis não sofrerá com picos de memória e Lorraine deve atualizar os alertas do Beacon.
+5	Ciclo de vida S3 (Intelligent-Tiering). Mover dados antigos automaticamente para camadas frias.	S3 Standard	$620,00 (Redução de ~20%)	1,48%	Baixo	Risco nulo. Pode haver latência mínima (milisegundos) se arquivos muito antigos forem solicitados pelo Ledger.
+Total	Potencial de Economia Alcançado	Todos	$7.040,00	16,84%	—	Meta batida com margem de segurança (1,84% acima do esperado).
+
+Conclusão e Próximos Passos
+A meta de 15% estabelecida pela diretoria é totalmente viável e pode ser superada, atingindo 16,84% de economia ($7.040,00 poupados mensalmente) sem comprometer a disponibilidade dos sistemas centrais (Chronos, Ledger, Reactor).
+Como passo imediato, recomenda-se iniciar pelas ações de Baixo Esforço (Itens 1, 2 e 5), que sozinhas já garantem 10,71% de redução com impacto técnico quase nulo. As ações de esforço Médio serão executadas logo em seguida, condicionadas à revisão de runbooks pela SRE (Lorraine) e validação de compliance (Strickland).
+
+Justificativa do Framework T-A-G
+A estrutura do prompt garantiu que a IA se comportasse exatamente dentro das restrições de negócio da Hill Valley Tech, dividindo-se nos três pilares essenciais:
+T (Task / Tarefa): Delimitada logo no início do prompt (Você é um Arquiteto de Nuvem / FinOps sênior...). O prompt define claramente o papel da IA, o contexto da empresa, quem é o receptor final do relatório (a CEO Goldie) e fornece os dados brutos (CSV) necessários para a análise, evitando alucinações de custos fictícios.
+A (Action / Ação): Explicitada no bloco de instruções passo a passo (1. Calcule o custo total... 2. Identifique... 3. Organize... 4. Escreva uma conclusão...).
+ O prompt comanda ações exatas: exige cálculos matemáticos (garantindo que a meta de 15% seja medida sobre o total real de $41.800), dita a formatação em 
+ tabela Markdown e amarra a análise de riscos à cultura da empresa (regras de SLA de Lorraine e compliance de Strickland).
+G (Goal / Objetivo): Definido na seção final do prompt (O objetivo é fornecer um plano de ação FinOps claro... que prove matematicamente como a Hill Valley Tech pode 
+reduzir seus custos em pelo menos 15% sem degradar a estabilidade...). 
+Isso garante que o output gerado pela IA não seja apenas uma lista genérica de dicas AWS, mas sim um plano defensável focado na meta corporativa exata 
+de 15% de redução sem quebra de SLA.

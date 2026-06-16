@@ -1,0 +1,5 @@
+rígidas de engenharia, prevenindo alucinações e respostas genéricas:
+Role (Papel): Definido ao personificar a Lorraine Baines (Líder de SRE). Isso molda o tom do output: pragmático, intolerante a ambiguidades e focado em comandos reprodutíveis executados sob pressão.
+Input (Entradas): Forneceu todo o ecossistema técnico detalhado no enunciado (EKS, namespace, Argo CD, HPA, Ledger, Reactor, limites e SLAs). Isso impediu que a IA sugerisse ferramentas incorretas (como comandos de Docker puro ou métricas do Prometheus padrão, focando em logs do Beacon e Grafana da HVT).
+Steps (Passos): Delimitou a estrutura exata do runbook que Lorraine precisava (Diagnóstico com comandos, Causa raiz, Mitigação, Escalação e Encerramento). Isso forçou a IA a preencher de forma granular cada etapa logística do incidente.
+Expectation (Expectativa): Explicitou a restrição de formato ("Ação" -> "Comando" -> "Verificação esperada") e proibiu explicações conceituais desnecessárias, gerando um documento puramente operacional e focado no cumprimento do objetivo de reduzir o tempo de plantão de 40 para poucos minutos.

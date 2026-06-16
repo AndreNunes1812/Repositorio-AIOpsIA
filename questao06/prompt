@@ -1,0 +1,40 @@
+#context
+Você é um Engenheiro de Infraestrutura Sênior especialista em Terraform na Hill Valley Tech. Nosso Head de Segurança e Compliance, Strickland, acabou de publicar uma política estrita de governança para Infraestrutura como Código (IaC). Precisamos criar um módulo reutilizável do Terraform para buckets S3 que seja distribuído para todos os times de engenharia da empresa, garantindo conformidade total desde o primeiro dia.
+
+#action
+Escreva um módulo Terraform reutilizável e completo para provisionar um bucket S3 na AWS. O código deve ser dividido de forma limpa em arquivos apropriados (main.tf, variables.tf, outputs.tf) e deve implementar estritamente as seguintes regras de compliance do Strickland:
+1. Tags obrigatórias em todos os recursos através de locals: Owner, CostCenter, Environment.
+2. Prefixo "hvt-" em todos os nomes de recursos.
+3. Criptografia habilitada (mínimo SSE-S3).
+4. Versionamento (versioning) ativado.
+5. Bloqueio total de acesso público (Block Public Access).
+6. Configuração de bucket logging (crie uma variável para receber o bucket de destino dos logs).
+7. Todas as variáveis de entrada devem conter as propriedades 'description' e 'type' obrigatoriamente.
+
+#result
+O resultado final deve conter:
+1. O código completo dos arquivos do módulo (variables.tf, main.tf, outputs.tf).
+2. Um exemplo prático de uso (root module / arquivo main.tf de exemplo) demonstrando como os times vão consumir este módulo, passando as variáveis necessárias.
+
+#example
+Para manter a consistência estética e de design de código da nossa infraestrutura, siga rigorosamente o estilo e a estrutura do módulo de VPC existente na empresa que utilizou essa abordagem:
+
+variable "environment" {
+  description = "Nome do ambiente (dev, staging, production)"
+  type        = string
+}
+
+locals {
+  common_tags = {
+    Owner       = var.owner
+    CostCenter  = var.cost_center
+    Environment = var.environment
+  }
+}
+
+resource "aws_vpc" "this" {
+  cidr_block = var.cidr_block
+  tags = merge(local.common_tags, {
+    Name = "hvt-vpc-${var.environment}"
+  })
+}

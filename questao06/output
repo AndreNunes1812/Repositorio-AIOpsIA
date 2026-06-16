@@ -1,0 +1,116 @@
+variables.tf
+
+variable "owner" {
+  description = "Time ou engenheiro responsável pelo recurso"
+  type        = string
+}
+
+variable "cost_center" {
+  description = "Centro de custo para alocação de despesas"
+  type        = string
+}
+
+variable "environment" {
+  description = "Nome do ambiente (dev, staging, production)"
+  type        = string
+}
+
+variable "bucket_name" {
+  description = "Sufixo do nome do bucket (será prefixado com hvt-)"
+  type        = string
+}
+
+variable "log_target_bucket" {
+  description = "Nome do bucket S3 de destino para os logs de acesso"
+  type        = string
+}
+
+variable "log_target_prefix" {
+  description = "Prefixo para os arquivos de log"
+  type        = string
+  default     = "log/"
+}
+
+main.tf
+
+locals {
+  common_tags = {
+    Owner       = var.owner
+    CostCenter  = var.cost_center
+    Environment = var.environment
+  }
+  
+  # Garante o padrão de nomenclatura interna hvt-
+  derived_bucket_name = "hvt-${var.bucket_name}-${var.environment}"
+}
+
+# 1. O Bucket S3 Principal
+resource "aws_s3_bucket" "this" {
+  bucket = local.derived_bucket_name
+
+  tags = merge(local.common_tags, {
+    Name = local.derived_bucket_name
+  })
+}
+
+# 2. Configuração de Criptografia (SSE-S3)
+resource "aws_s3_bucket_server_side_encryption_configuration" "this" {
+  bucket = aws_s3_bucket.this.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+# 3. Configuração de Versionamento
+resource "aws_s3_bucket_versioning" "this" {
+  bucket = aws_s3_bucket.this.id
+  
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+# 4. Bloqueio de Acesso Público Total
+resource "aws_s3_bucket_public_access_block" "this" {
+  bucket = aws_s3_bucket.this.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# 5. Configuração de Logging do Bucket
+resource "aws_s3_bucket_logging" "this" {
+  bucket = aws_s3_bucket.this.id
+
+  target_bucket = var.log_target_bucket
+  target_prefix = var.log_target_prefix
+}
+
+outputs.tf
+
+output "bucket_id" {
+  description = "O nome/ID do bucket S3 criado"
+  value       = aws_s3_bucket.this.id
+}
+
+output "bucket_arn" {
+  description = "O ARN do bucket S3 criado"
+  value       = aws_s3_bucket.this.arn
+}
+
+exemplo de uso 
+
+output "bucket_id" {
+  description = "O nome/ID do bucket S3 criado"
+  value       = aws_s3_bucket.this.id
+}
+
+output "bucket_arn" {
+  description = "O ARN do bucket S3 criado"
+  value       = aws_s3_bucket.this.arn
+}

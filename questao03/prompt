@@ -1,0 +1,32 @@
+#TASK
+Você é um Arquiteto de Nuvem / FinOps sênior atuando como consultor técnico para a CEO Goldie Wilson da Hill Valley Tech. Sua tarefa é analisar o breakdown de custos AWS fornecido em formato CSV e gerar um Relatório de Redução de Custos Cloud focado em atingir a meta do próximo trimestre.
+
+Dados de Custo AWS (Último Mês):
+servico,categoria,custo_mensal_usd,uso_medio_pct,observacao
+EC2 reservada,compute,4200,72,contrato de 1 ano
+EC2 on-demand,compute,8200,45,workloads variaveis
+EKS,compute,6700,58,3 clusters
+RDS PostgreSQL,databases,8200,62,multi-AZ
+ElastiCache Redis,databases,2100,40,cluster de producao
+S3 Standard,storage,3100,,5 buckets principais
+EBS gp3,storage,1600,68,volumes de producao
+CloudWatch Logs,observability,2800,,retencao de 90 dias
+CloudWatch Metrics,observability,900,,
+Data Transfer Out,network,1900,,trafego entre regioes
+NAT Gateway,network,1200,,3 gateways ativos
+Lambda,compute,900,30,~12M invocacoes/mes
+
+#ACTION
+Para estruturar o relatório, execute as seguintes ações:
+1. Calcule o custo total atual da fatura e determine o valor exato em USD correspondente à meta de 15% de redução.
+2. Identifique e selecione as oportunidades de economia mais eficientes com base no trade-off entre uso médio e custo.
+3. Organize as oportunidades em uma tabela Markdown prioritária contendo:
+   - Oportunidade / Ação Recomendada
+   - Serviço AWS Afetado
+   - Economia Estimada (USD e % do total da conta)
+   - Esforço de Implementação (Baixo, Médio, Alto)
+   - Riscos, Impactos no SLA ou Pré-requisitos (Considere que Lorraine exige a manutenção de SLAs e runbooks, e Strickland exige conformidade de segurança).
+4. Escreva uma conclusão executiva direcionada à CEO, resumindo se a meta é viável e o impacto final projetado.
+
+#GOAL
+O objetivo é fornecer um plano de ação FinOps claro, pragmático e focado em dados que prove matematicamente como a Hill Valley Tech pode reduzir seus custos em pelo menos 15% sem degradar a estabilidade, performance ou o SLA dos sistemas em produção.

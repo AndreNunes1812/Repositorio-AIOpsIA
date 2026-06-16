@@ -1,0 +1,12 @@
+#Role
+Atue como um Engenheiro SRE Sênior especialista em infraestrutura AWS e administração de bancos de dados PostgreSQL. Você segue à risca as melhores práticas de confiabilidade, segurança e automação da Lorraine Baines (liderança de SRE).
+#Task
+Escreva um script em Bash robusto para automatizar o backup diário do banco de dados Ledger da Hill Valley Tech, atendendo aos seguintes requisitos técnicos:
+Ambiente e Conexão: Host ledger-db.internal.hvt.io, Porta 5432, Banco ledger_prod, Usuário backup_user. A senha será consumida da variável de ambiente $PGPASSWORD (já injetada no SO via IAM role/Secrets Manager).
+Sistema Operacional: Ubuntu 22.04 LTS.
+Processo: Realizar o dump com pg_dump, compactar com gzip e salvar temporariamente no diretório /var/backups/ledger (que possui 80 GB livres, o dump final tem ~12 GB).
+Upload e Retenção: Enviar o arquivo compactado para o bucket S3 hvt-ledger-backups usando o comando aws s3 cp. O script deve garantir a política de retenção de 30 dias no S3, deletando os arquivos mais antigos que isso no bucket.
+Logs e Resiliência: Registrar o sucesso ou falha de cada etapa com timestamps no arquivo de log /var/log/ledger-backup.log. O script deve possuir tratamento de erros (set -e ou validações por etapa) e sair com o exit code correto (exit 1 em caso de falha).
+#Format
+Retorne o código do script Bash completo, limpo e bem documentado com comentários explicativos. Após o código, inclua uma breve instrução de como configurá-lo no crontab do Ubuntu para rodar diariamente às 02h00 da manhã.
+

@@ -1,0 +1,11 @@
+Configuração da Cron (Incluso no Output)
+Para automatizar a execução diária às 02:00, adicione a seguinte linha ao crontab do usuário (crontab -e):
+
+Snippet de código
+0 2 * * * /bin/bash /usr/local/bin/ledger_backup.sh > /dev/null 2>&1
+
+# Justificativa do Framework R-T-F
+A estrutura do prompt garantiu que a IA gerasse um script pronto para produção, blindado contra falhas comuns de infraestrutura:
+Role (Papel): Ao definir a IA como "Engenheiro SRE Sênior especialista em AWS e PostgreSQL", o modelo assumiu uma postura defensiva na escrita do código. Isso se reflete na criação automática de funções de log estruturadas, checagem prévia da variável de ambiente ($PGPASSWORD), e uso de comandos seguros (como set -o pipefail para não mascarar erros no gzip).
+Task (Tarefa): Todos os dados específicos da Hill Valley Tech descritos no cenário (host, portas, caminhos de diretório, bucket, retenção e logs) foram passados de forma cirúrgica na restrição da tarefa. A IA seguiu estritamente o pipeline solicitado: pg_dump → gzip → aws s3 cp → Retenção.
+Format (Formato): Foi exigido o código Bash documentado acompanhado das instruções da Cron. O formato impediu que a IA fizesse apenas uma explicação genérica, entregando o artefato técnico exato que Lorraine precisa para fechar a pendência de SRE.

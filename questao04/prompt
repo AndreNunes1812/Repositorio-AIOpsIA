@@ -1,0 +1,34 @@
+#Task
+Sua tarefa é gerar uma query SQL compatível com PostgreSQL para consolidar o relatório mensal de transações da nossa plataforma Hill Valley Tech. O objetivo é fornecer dados para uma apresentação de negócios da nossa PM (Jennifer) para a CEO (Goldie).
+
+#Action
+Para agir, utilize estritamente a estrutura das duas tabelas abaixo:
+
+CREATE TABLE transactions (
+  id              BIGSERIAL PRIMARY KEY,
+  customer_id     BIGINT NOT NULL REFERENCES customers(id),
+  category        VARCHAR(32) NOT NULL,
+  amount_cents    BIGINT NOT NULL,
+  status          VARCHAR(16) NOT NULL,
+  payment_method  VARCHAR(16),
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  completed_at    TIMESTAMPTZ
+);
+
+CREATE TABLE customers (
+  id          BIGSERIAL PRIMARY KEY,
+  segment     VARCHAR(16) NOT NULL,
+  country     CHAR(2) NOT NULL,
+  signup_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+Regras de negócio que você deve aplicar na construção da query:
+1. Filtro de Status: Considere apenas transações onde status = 'completed'.
+2. Conversão de Valores: O campo `amount_cents` está em centavos. Converta e formate este valor para Reais (R$) com 2 casas decimais no volume total.
+3. Recorte Temporal: Filtre os últimos 6 meses corridos a partir da data de referência fixa: 2026-04-24 (utilize `created_at` para o filtro de tempo).
+4. Agrupamento: Agrupe os dados por mês (formatado estritamente como 'YYYY-MM') e por categoria (as categorias existentes são: 'subscription', 'one_time', 'refund' e 'credit_adjustment').
+5. Métricas por linha: Traga duas métricas: a quantidade total de transações e o volume total financeiro em reais.
+6. Ordenação: Ordene o resultado por mês de forma crescente e, em seguida, por categoria de forma crescente.
+
+#Goal
+O resultado final esperado é exclusivamente o código SQL puro, limpo, bem identado e pronto para execução no PostgreSQL, sem explicações adicionais textuais antes ou depois do código.

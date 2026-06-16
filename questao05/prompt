@@ -1,0 +1,39 @@
+#Before
+Atue como um Engenheiro DevOps Sênior especialista em Kubernetes. Nós temos um deployment legado em produção na empresa Hill Valley Tech para o nosso componente core, o chronos-api (um API Gateway). O manifesto atual foi escrito há três anos pelo George McFly e possui graves problemas de segurança, escalabilidade e resiliência. Ele está estático com apenas 1 réplica, usa a tag :latest, expõe segredos em texto puro (senhas e chaves JWT) e não possui limites de recursos ou travas de segurança. O manifesto original é este:
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chronos-api
+  namespace: production
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chronos-api
+  template:
+    metadata:
+      labels:
+        app: chronos-api
+    spec:
+      containers:
+      - name: api
+        image: chronos-api:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: DB_PASSWORD
+        value: "P@ssw0rd2023!"
+        - name: JWT_SECRET
+        value: "hvt-jwt-prod-secret"
+
+#After
+O nosso objetivo é transformar esse manifesto em uma versão moderna, resiliente e segura de nível enterprise, que atenda perfeitamente aos requisitos de Alta Disponibilidade da Lorraine Baines (SRE) e aos padrões rigorosos de segurança e compliance do Strickland. O resultado final deve ser um manifesto YAML pronto para produção e totalmente aderente às melhores práticas de Cloud Native.
+[Bridge (A Ponte/Instruções)]
+Para transformar o manifesto do "Antes" no "Depois", aplique estritamente as seguintes modificações e melhorias:
+Alta Disponibilidade: Aumente para 3 réplicas e adicione uma estratégia de RollingUpdate.
+Versionamento: Altere a imagem para usar uma tag semântica específica fictícia (ex: v2.4.1) em vez de :latest.
+Segurança de Segredos: Remova as variáveis DB_PASSWORD e JWT_SECRET em texto limpo e faça-as apontar para um Secret do Kubernetes (chronos-secrets).
+Gerenciamento de Recursos: Adicione requests e limits de CPU e Memória para evitar o esgotamento do nó.
+Probes de Saúde: Implemente livenessProbe e readinessProbe apontando para a porta 8080 nos caminhos /healthz e /ready, respectivamente.
+SecurityContext: Aplique políticas de segurança para garantir que o container não rode como root (runAsNonRoot: true, runAsUser: 1000) e com o sistema de arquivos de leitura desabilitado se aplicável.

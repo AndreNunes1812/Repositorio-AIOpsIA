@@ -1,0 +1,75 @@
+#!/bin/bash
+
+# ==============================================================================
+# Script: ledger_backup.sh
+# Descrição: Backup automatizado do PostgreSQL (Ledger) e upload para o AWS S3.
+# Empresa: Hill Valley Tech
+# Responsável: Time de SRE (Lorraine Baines)
+# ==============================================================================
+
+# Configurações de interrupção imediata em caso de erro
+set -o pipefail
+
+# Variáveis do Ambiente
+DB_HOST="ledger-db.internal.hvt.io"
+DB_PORT="5432"
+DB_NAME="ledger_prod"
+DB_USER="backup_user"
+BACKUP_DIR="/var/backups/ledger"
+LOG_FILE="/var/log/ledger-backup.log"
+S3_BUCKET="s3://hvt-ledger-backups"
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+BACKUP_FILE="${BACKUP_DIR}/ledger_prod_${TIMESTAMP}.sql.gz"
+
+# Garante que a variável PGPASSWORD existe (injetada via AWS Secrets Manager)
+if [ -z "$PGPASSWORD" ]; then
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [ERRO] Variável PGPASSWORD não definida. Abortando." >> "$LOG_FILE"
+    exit 1
+fi
+
+# Função de Logging
+log_message() {
+    local level=$1
+    local message=$2
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [$level] $message" >> "$LOG_FILE"
+}
+
+log_message "INFO" "Iniciando processo de backup do Ledger..."
+
+# 1. Realiza o pg_dump e compactação via gzip de forma atômica
+log_message "INFO" "Executando pg_dump e compactando com gzip..."
+if pg_dump -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -F p | gzip > "$BACKUP_FILE"; then
+    log_message "INFO" "Dump criado com sucesso em: $BACKUP_FILE"
+else
+    log_message "ERRO" "Falha ao executar pg_dump ou gzip."
+    exit 1
+fi
+
+# 2. Upload para o AWS S3
+log_message "INFO" "Enviando arquivo para o bucket S3: $S3_BUCKET"
+if aws s3 cp "$BACKUP_FILE" "${S3_BUCKET}/ledger_prod_${TIMESTAMP}.sql.gz"; then
+    log_message "INFO" "Upload concluído com sucesso."
+else
+    log_message "ERRO" "Falha no upload para o S3."
+    rm -f "$BACKUP_FILE" # Limpa o arquivo local mesmo em caso de erro no S3
+    exit 1
+fi
+
+# 3. Limpeza local (evitar estouro dos 80GB livres ao longo do tempo)
+log_message "INFO" "Removendo arquivo de backup local temporário..."
+rm -f "$BACKUP_FILE"
+
+# 4. Aplicação da política de retenção de 30 dias no S3
+log_message "INFO" "Aplicando política de retenção de 30 dias no S3..."
+DELETION_DATE=$(date -d "30 days ago" +%Y-%m-%d)
+
+# Lista e remove arquivos mais antigos que 30 dias com base na data de modificação do S3
+aws s3 api list-objects-v2 --bucket "hvt-ledger-backups" --query "Contents[?LastModified<='${DELETION_DATE}'].{Key:Key}" --output text | while read -r KEY; do
+    if [ "$KEY" != "None" ] && [ -n "$KEY" ]; then
+        log_message "INFO" "Removendo backup antigo do S3: $KEY"
+        aws s3 rm "${S3_BUCKET}/${KEY}"
+    fi
+done
+
+log_message "INFO" "Processo de backup finalizado com sucesso."
+exit 0

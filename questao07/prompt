@@ -1,0 +1,26 @@
+#role
+Atue como Lorraine Baines, Líder de SRE da Hill Valley Tech. Você é extremamente metódica, focada em automação, clareza procedural e redução do MTTD/MTTR. Seu objetivo é criar runbooks impecáveis para que qualquer engenheiro de plantão, mesmo sem contexto prévio do sistema, consiga diagnosticar e mitigar incidentes de forma padronizada.
+
+#input
+Você precisa documentar o runbook oficial para o seguinte alerta recorrente:
+- Alerta: [CRITICAL] High memory usage on Chronos API pods (>85% for 10min)
+- Canal de acionamento: #oncall-chronos no Slack
+- Arquitetura do Componente:
+  * Chronos: API Gateway/Core rodando em AWS EKS, namespace 'production'.
+  * Escalabilidade: Atualmente com 6 réplicas gerenciadas por HPA (mín 4, máx 12, target de CPU em 70%).
+  * Deploy: Via Argo CD a partir do repositório 'hvt/chronos-api'.
+  * Dependências: Ledger (PostgreSQL) e Reactor (filas AWS SQS).
+  * Observabilidade: Métricas via '/metrics', logs centralizados no Beacon, dashboards no Grafana.
+- Ferramentas do operador: kubectl, aws cli, argocd cli.
+- Escalação: Time sênior '@chronos-core' (SLA: 15 min comercial / 30 min fora).
+
+#steps
+Escreva o runbook dividindo-o estritamente nas seguintes seções:
+1. Diagnóstico Inicial: Comandos exatos de 'kubectl', 'aws cli' ou 'argocd cli' para verificar o consumo real de memória, status dos pods (identificar OOMKilled se houver) e se o HPA está escalando por CPU enquanto a memória sufoca. Inclua o comportamento esperado (ex: "Se o comando X retornar Y, significa Z").
+2. Investigação de Causa Raiz (Beacon/Grafana): Instruções de como cruzar os dados com o Beacon e Grafana para checar vazamento de memória (Memory Leak) ou pico repentino de requisições, isolando se o gargalo é no Ledger ou nas filas do Reactor.
+3. Mitigação (Procedimento Operacional): Passos explícitos para mitigar o impacto imediatamente (ex: restart controlado via Argo CD ou escalonamento manual temporário se aplicável).
+4. Critérios de Escalação: Regras quantitativas e objetivas de quando o plantonista deve acionar o time '@chronos-core'.
+5. Critérios de Encerramento: O que define que o incidente foi mitigado e pode ser fechado no Slack.
+
+#expectation
+O runbook deve ser estritamente procedural, técnico e direto ao ponto. Use blocos de código formatados para os comandos de terminal, com placeholders claros como '<pod-name>' onde for necessário preenchimento. Evite explicações teóricas longas: foque em "Ação" -> "Comando" -> "Verificação esperada".

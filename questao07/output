@@ -1,0 +1,62 @@
+Runbook: HVT-RUN-004 - [CRITICAL] High Memory Usage on Chronos API
+ID do Alerta: chronos-mem-high
+Severidade: Crítica
+Componente: Chronos API (Gateway & Core)
+Canal do Incidente: #oncall-chronos (Slack)
+Time de Escalação: @chronos-core (SLA: 15min comercial / 30min fora de hora)
+1. Diagnóstico Inicial
+Execute os comandos abaixo a partir do seu terminal configurado com acesso ao cluster de production.
+Passo 1.1: Verificar consumo de recursos dos Pods
+Rode o comando para listar os pods do Chronos e o consumo atual de recursos:
+Bash
+kubectl top pods -n production -l app=chronos
+Verificação Esperada: Identifique se o consumo de memória está consistentemente acima de 85% em todas as réplicas ou se há um comportamento de outlier (apenas um ou dois pods saturados).
+Passo 1.2: Verificar reinicializações e eventos de OOMKilled
+Verifique se o Kubernetes já está derrubando pods por falta de memória:
+Bash
+kubectl get pods -n production -l app=chronos -o wide
+Verificação Esperada: Olhe a coluna RESTARTS. Se houver restarts recentes, execute o comando abaixo no pod afetado:
+Bash
+kubectl describe pod <nome-do-pod> -n production | grep -E "Last State:|Reason:|Exit Code:"
+Resultado Esperado: Se Reason: OOMKilled e Exit Code: 137 estiverem presentes, o processo da aplicação estourou o limite físico configurado no spec do container.
+Passo 1.3: Validar o comportamento do HPA
+Como o HPA está configurado para olhar apenas CPU (Target: 70%), ele pode não disparar novas réplicas para aliviar a memória. Verifique o status do HPA:
+Bash
+kubectl get hpa -n production -l app=chronos
+Verificação Esperada: Se a CPU estiver baixa (ex: <40%) e a memória alta (>85%), o HPA não vai escalar automaticamente. Guarde essa informação para o passo de mitigação.
+2. Investigação de Causa Raiz via Beacon
+Passo 2.1: Analisar perfil de consumo no Grafana
+Acesse o painel Beacon - Chronos Dashboard no Grafana.
+Filtre pela métrica de Memory Usage (Percent) dos últimos 60 minutos.
+Diagnóstico de Memory Leak: Se o gráfico mostrar uma linha diagonal ascendente contínua ("escada"), sem quedas após a conclusão de requisições, trata-se de um Memory Leak.
+Diagnóstico de Volumetria: Se houver um degrau abrupto correlacionado com o gráfico de Requests Per Second (RPS), o consumo é fruto do volume de tráfego.
+Passo 2.2: Verificar Gargalos em Dependências (Ledger e Reactor)
+No Beacon Logs, execute a seguinte query para identificar lentidões no PostgreSQL (Ledger) ou timeouts no SQS (Reactor):
+Snippet de código
+service="chronos" AND (level="ERROR" OR level="WARN")
+Verifique se há acúmulo de mensagens nas filas do Reactor acessando o painel de SQS do Beacon.
+Verificação Esperada: Se as conexões com o Ledger estiverem saturadas ou se a fila do Reactor estiver empilhando mensagens, o Chronos pode estar retendo objetos em memória enquanto espera o processamento assíncrono terminar.
+3. Procedimento de Mitigação Imediata
+Siga os passos abaixo na ordem descrita para restabelecer a saúde do ambiente.
+Opção A: Se houver travamento ou degradação crítica (Restart Controlado)
+Se a API estiver respondendo com HTTP 5xx ou timeouts devido à pressão de memória, realize um restart via Argo CD para limpar o heap da aplicação:
+Bash
+argocd app rollback chronos-api -n production --history-id <id-da-ultima-versao-estavel>
+# OU force o restart do deployment via kubectl caso não haja alteração de código recente:
+kubectl rollout restart deployment chronos -n production
+Verificação Esperada: Monitore o progresso do rollout com kubectl rollout status deployment chronos -n production. Os novos pods devem subir com o consumo de memória zerado (baseline inicial).
+Opção B: Se o HPA não escalou e o tráfego continua alto (Escalonamento Manual)
+Se o volume de requisições for alto, aumente o número mínimo de réplicas temporariamente para dividir a carga de memória entre mais pods:
+Bash
+kubectl scale deployment chronos -n production --replicas=10
+Nota: Não ultrapasse o limite máximo de 12 réplicas sem autorização do CTO, para não sobrecarregar as conexões do Ledger (PostgreSQL).
+4. Critérios de Escalação
+O plantonista deve acionar o time @chronos-core no Slack imediatamente se:
+Falha na Mitigação: Após aplicar o rollout restart ou escalonamento manual, os novos pods atingirem >85% de memória em menos de 5 minutos (indício de leak agressivo introduzido em deploy recente).
+Efeito Cascata no Ledger: O diagnóstico apontar que o consumo de memória do Chronos é causado pelo travamento de queries no banco de dados Ledger (PostgreSQL fora do ar ou com queries em lock).
+Limite de Réplicas Atingido: O deployment chegar a 12 réplicas (máximo do HPA) e continuar operando acima de 85% de uso de memória com degradação de performance do cliente.
+5. Critérios de Encerramento
+O incidente pode ser considerado resolvido e a thread no #oncall-chronos fechada quando:
+O consumo médio de memória de todos os pods ativos do Chronos se estabilizar abaixo de 70% por pelo menos 15 minutos contínuos.
+A taxa de erros HTTP da API retornar ao baseline normal (<0.5% das requisições).
+O HPA for reconfigurado para o estado original caso tenha sido feito escalonamento manual (kubectl autoscale... ou via sincronização automática do Argo CD).

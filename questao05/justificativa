@@ -1,0 +1,4 @@
+estrutura do prompt utilizou os três pilares do framework Before-After-Bridge de forma explícita:
+Before (Antes): Identificado no bloco inicial do prompt. Mostra o estado atual, caótico e legado do manifesto de 3 anos atrás do George McFly, incluindo o código YAML original com todas as suas vulnerabilidades e falhas de arquitetura (1 réplica, secrets expostas, sem limites).
+After (Depois): Estabelecido no segundo bloco. Define a visão de futuro ideal para a Hill Valley Tech: um manifesto Kubernetes robusto, seguro, resiliente, pronto para produção, que atenda aos critérios da SRE (Lorraine) e de Segurança (Strickland).
+Bridge (A Ponte): Estruturado como a lista numerada de instruções diretas de engenharia (mudar réplicas para 3, configurar SecretKeyRef, embutir securityContext, etc.). É a ponte que ensina o modelo exatamente como transformar o "Antes" (legado) no "Depois" (moderno).
